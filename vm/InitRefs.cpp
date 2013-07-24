@@ -127,7 +127,7 @@ static bool initClassReferences() {
         { &gDvm.classJavaLangReflectMethod,             "Ljava/lang/reflect/Method;" },
         { &gDvm.classJavaLangReflectMethodArray,        "[Ljava/lang/reflect/Method;"},
         { &gDvm.classJavaLangReflectProxy,              "Ljava/lang/reflect/Proxy;" },
-        { &gDvm.classJavaNioReadWriteDirectByteBuffer,  "Ljava/nio/ReadWriteDirectByteBuffer;" },
+        { &gDvm.classJavaNioDirectByteBuffer,           "Ljava/nio/DirectByteBuffer;" },
         { &gDvm.classOrgApacheHarmonyDalvikDdmcChunk,
           "Lorg/apache/harmony/dalvik/ddmc/Chunk;" },
         { &gDvm.classOrgApacheHarmonyDalvikDdmcDdmServer,
@@ -251,7 +251,7 @@ static bool initFieldOffsets() {
 
     static struct FieldInfo infoBuffer[] = {
         { &gDvm.offJavaNioBuffer_capacity,               "capacity",               "I" },
-        { &gDvm.offJavaNioBuffer_effectiveDirectAddress, "effectiveDirectAddress", "I" },
+        { &gDvm.offJavaNioBuffer_effectiveDirectAddress, "effectiveDirectAddress", "J" },
         { NULL, NULL, NULL }
     };
 
@@ -331,8 +331,8 @@ static bool initConstructorReferences() {
         { &gDvm.methJavaLangReflectMethod_init, "Ljava/lang/reflect/Method;",
           "(Ljava/lang/Class;[Ljava/lang/Class;[Ljava/lang/Class;Ljava/lang/Class;"
           "Ljava/lang/String;I)V" },
-        { &gDvm.methJavaNioReadWriteDirectByteBuffer_init, "Ljava/nio/ReadWriteDirectByteBuffer;",
-          "(II)V" },
+        { &gDvm.methJavaNioDirectByteBuffer_init, "Ljava/nio/DirectByteBuffer;",
+          "(JI)V" },
         { &gDvm.methOrgApacheHarmonyLangAnnotationAnnotationMember_init,
           "Lorg/apache/harmony/lang/annotation/AnnotationMember;",
           "(Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Class;Ljava/lang/reflect/Method;)V" },

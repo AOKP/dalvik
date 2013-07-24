@@ -120,6 +120,7 @@ static void logThreadStacks(FILE* fp)
         ptm->tm_hour, ptm->tm_min, ptm->tm_sec);
     printProcessName(&target);
     dvmPrintDebugMessage(&target, "\n");
+    dvmDumpJniStats(&target);
     dvmDumpAllThreadsEx(&target, true);
     fprintf(fp, "----- end %d -----\n", pid);
 }
@@ -151,6 +152,7 @@ static void handleSigQuit()
         /* just dump to log */
         DebugOutputTarget target;
         dvmCreateLogOutputTarget(&target, ANDROID_LOG_INFO, LOG_TAG);
+        dvmDumpJniStats(&target);
         dvmDumpAllThreadsEx(&target, true);
     } else {
         /* write to memory buffer */
@@ -189,7 +191,7 @@ static void handleSigQuit()
             ALOGE("Unable to open stack trace file '%s': %s",
                 gDvm.stackTraceFile, strerror(errno));
         } else {
-            ssize_t actual = write(fd, traceBuf, traceLen);
+            ssize_t actual = TEMP_FAILURE_RETRY(write(fd, traceBuf, traceLen));
             if (actual != (ssize_t) traceLen) {
                 ALOGE("Failed to write stack traces to %s (%d of %zd): %s",
                     gDvm.stackTraceFile, (int) actual, traceLen,

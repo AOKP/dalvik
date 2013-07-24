@@ -77,7 +77,9 @@ dvmJitToInterpSingleStep:
  */
 dvmJitToInterpNoChainNoProfile:
 #if defined(WITH_JIT_TUNING)
+    SPILL_TMP1(%eax)
     call   dvmBumpNoChain
+    UNSPILL_TMP1(%eax)
 #endif
     movl   %eax, rPC
     movl   rSELF, %eax
@@ -105,6 +107,7 @@ dvmJitToInterpNoChainNoProfile:
     .global dvmJitToInterpTraceSelectNoChain
 dvmJitToInterpTraceSelectNoChain:
 #if defined(WITH_JIT_TUNING)
+    movl   %edx, OUT_ARG0(%esp)
     call   dvmBumpNoChain
 #endif
     movl   %ebx, rPC
@@ -218,6 +221,11 @@ dvmJitToInterpNormal:
     .global dvmJitToInterpNoChain
 dvmJitToInterpNoChain:
 dvmJitToInterpNoChain: #rPC in eax
+#if defined(WITH_JIT_TUNING)
+    SPILL_TMP1(%eax)
+    call   dvmBumpNoChain
+    UNSPILL_TMP1(%eax)
+#endif
     ## TODO, need to clean up stack manipulation ... this isn't signal safe and
     ## doesn't use the calling conventions of header.S
     movl        %eax, rPC
@@ -350,8 +358,7 @@ common_selectTrace2:
 /*
  * For the invoke codes we need to know what register holds the "this" pointer. However
  * it seems the this pointer is assigned consistently most times it is in %ecx but other
- * times it is in OP_INVOKE_INTERFACE_JUMBO OP_INVOKE_INTERFACE OP_INVOKE_SUPER_QUICK and
- * OP_INVOKE_VIRTUAL_QUICK
+ * times it is in OP_INVOKE_INTERFACE, OP_INVOKE_SUPER_QUICK, or OP_INVOKE_VIRTUAL_QUICK.
 */
 
 /*
@@ -917,7 +924,6 @@ common_exceptionThrown:
 
     movl       offThread_method(%ecx), %eax # %eax = self->method
     movl       offMethod_insns(%eax), %eax  # %eax = self->method->insn
-    # ldrh    lr, [rSELF, #offThread_subMode]  @ lr<- subMode flags  # TODO
     movl       rPC, %ecx
     subl       %eax, %ecx              # %ecx = pc - self->method->insn
     sar        $$1, %ecx                # adjust %ecx for code offset

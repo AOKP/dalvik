@@ -1542,15 +1542,15 @@ dalvik_inst:
     move      a1, rBIX                     #  a1 <- vCC
     b         OP_CMPL_FLOAT_continue
 #else
-    GET_VREG_F(fs0, a2)
-    GET_VREG_F(fs1, a3)
-    c.olt.s   fcc0, fs0, fs1               # Is fs0 < fs1
+    GET_VREG_F(ft0, a2)
+    GET_VREG_F(ft1, a3)
+    c.olt.s   fcc0, ft0, ft1               # Is ft0 < ft1
     li        rTEMP, -1
     bc1t      fcc0, OP_CMPL_FLOAT_finish
-    c.olt.s   fcc0, fs1, fs0
+    c.olt.s   fcc0, ft1, ft0
     li        rTEMP, 1
     bc1t      fcc0, OP_CMPL_FLOAT_finish
-    c.eq.s    fcc0, fs0, fs1
+    c.eq.s    fcc0, ft0, ft1
     li        rTEMP, 0
     bc1t      fcc0, OP_CMPL_FLOAT_finish
     b         OP_CMPL_FLOAT_nan
@@ -1605,15 +1605,15 @@ dalvik_inst:
     move      a1, rBIX                     #  a1 <- vCC
     b         OP_CMPG_FLOAT_continue
 #else
-    GET_VREG_F(fs0, a2)
-    GET_VREG_F(fs1, a3)
-    c.olt.s   fcc0, fs0, fs1               # Is fs0 < fs1
+    GET_VREG_F(ft0, a2)
+    GET_VREG_F(ft1, a3)
+    c.olt.s   fcc0, ft0, ft1               # Is ft0 < ft1
     li        rTEMP, -1
     bc1t      fcc0, OP_CMPG_FLOAT_finish
-    c.olt.s   fcc0, fs1, fs0
+    c.olt.s   fcc0, ft1, ft0
     li        rTEMP, 1
     bc1t      fcc0, OP_CMPG_FLOAT_finish
-    c.eq.s    fcc0, fs0, fs1
+    c.eq.s    fcc0, ft0, ft1
     li        rTEMP, 0
     bc1t      fcc0, OP_CMPG_FLOAT_finish
     b         OP_CMPG_FLOAT_nan
@@ -1659,15 +1659,15 @@ dalvik_inst:
     LOAD64(rARG0, rARG1, rOBJ)             #  a0/a1 <- vBB/vBB+1
     b         OP_CMPL_DOUBLE_continue
 #else
-    LOAD64_F(fs0, fs0f, rOBJ)
-    LOAD64_F(fs1, fs1f, rBIX)
-    c.olt.d   fcc0, fs0, fs1
+    LOAD64_F(ft0, ft0f, rOBJ)
+    LOAD64_F(ft1, ft1f, rBIX)
+    c.olt.d   fcc0, ft0, ft1
     li        rTEMP, -1
     bc1t      fcc0, OP_CMPL_DOUBLE_finish
-    c.olt.d   fcc0, fs1, fs0
+    c.olt.d   fcc0, ft1, ft0
     li        rTEMP, 1
     bc1t      fcc0, OP_CMPL_DOUBLE_finish
-    c.eq.d    fcc0, fs0, fs1
+    c.eq.d    fcc0, ft0, ft1
     li        rTEMP, 0
     bc1t      fcc0, OP_CMPL_DOUBLE_finish
     b         OP_CMPL_DOUBLE_nan
@@ -1711,15 +1711,15 @@ dalvik_inst:
     LOAD64(rARG0, rARG1, rOBJ)             #  a0/a1 <- vBB/vBB+1
     b         OP_CMPG_DOUBLE_continue
 #else
-    LOAD64_F(fs0, fs0f, rOBJ)
-    LOAD64_F(fs1, fs1f, rBIX)
-    c.olt.d   fcc0, fs0, fs1
+    LOAD64_F(ft0, ft0f, rOBJ)
+    LOAD64_F(ft1, ft1f, rBIX)
+    c.olt.d   fcc0, ft0, ft1
     li        rTEMP, -1
     bc1t      fcc0, OP_CMPG_DOUBLE_finish
-    c.olt.d   fcc0, fs1, fs0
+    c.olt.d   fcc0, ft1, ft0
     li        rTEMP, 1
     bc1t      fcc0, OP_CMPG_DOUBLE_finish
-    c.eq.d    fcc0, fs0, fs1
+    c.eq.d    fcc0, ft0, ft1
     li        rTEMP, 0
     bc1t      fcc0, OP_CMPG_DOUBLE_finish
     b         OP_CMPG_DOUBLE_nan
@@ -10850,14 +10850,14 @@ d2l_doconv:
     addu      a1, rSELF, offThread_retval  #  a1<- &self->retval
     GET_OPB(a0)                            #  a0 <- B
     # Stack should have 16/20 available
-    sw        a1, 16(sp)                   #  push &self->retval
+    sw        a1, STACK_OFFSET_ARG04(sp)   #  push &self->retval
     BAL(.LOP_EXECUTE_INLINE_continue)              #  make call; will return after
     lw        gp, STACK_OFFSET_GP(sp)      #  restore gp
     move      rINST, v0                    #  save result of inline
     move      a0, rOBJ                     #  a0<- method
     move      a1, rSELF                    #  a1<- self
-    JAL(dvmFastMethodTraceExit)            #  (method, self)
-    beqz      v0, common_exceptionThrown   #  returned false, handle exception
+    JAL(dvmFastNativeMethodTraceExit)      #  (method, self)
+    beqz      rINST, common_exceptionThrown   #  returned false, handle exception
     FETCH_ADVANCE_INST(3)                  #  advance rPC, load rINST
     GET_INST_OPCODE(t0)                    #  extract opcode from rINST
     GOTO_OPCODE(t0)                        #  jump to next instruction
@@ -10912,7 +10912,7 @@ d2l_doconv:
     addu      a1, rSELF, offThread_retval  #  a1<- &self->retval
     GET_OPA(a0)                            #  a0 <- A
     # Stack should have 16/20 available
-    sw        a1, 16(sp)                   #  push &self->retval
+    sw        a1, STACK_OFFSET_ARG04(sp)   #  push &self->retval
     move      rINST, rOBJ                  #  rINST<- method
     BAL(.LOP_EXECUTE_INLINE_RANGE_continue)              #  make call; will return after
     lw        gp, STACK_OFFSET_GP(sp)      #  restore gp
@@ -10935,11 +10935,7 @@ d2l_doconv:
      */
 .LOP_INVOKE_OBJECT_INIT_RANGE_debugger:
     lw      a1, offThread_mainHandlerTable(rSELF)
-    .if 0
-    li      t0, OP_INVOKE_DIRECT_JUMBO
-    .else
     li      t0, OP_INVOKE_DIRECT_RANGE
-    .endif
     GOTO_OPCODE_BASE(a1, t0)            # execute it
 
 /* continuation for OP_IPUT_OBJECT_VOLATILE */
@@ -11487,37 +11483,6 @@ save_callsiteinfo:
 #endif
 
 /*
- * Common code for jumbo method invocation.
- * NOTE: this adjusts rPC to account for the difference in instruction width.
- * As a result, the savedPc in the stack frame will not be wholly accurate. So
- * long as that is only used for source file line number calculations, we're
- * okay.
- */
-common_invokeMethodJumboNoThis:
-#if defined(WITH_JIT)
- /* On entry: a0 is "Method* methodToCall */
-    li       rOBJ, 0                     # clear "this"
-#endif
-common_invokeMethodJumbo:
- /* On entry: a0 is "Method* methodToCall, rOBJ is "this" */
-.LinvokeNewJumbo:
-#if defined(WITH_JIT)
-    lhu      a1, offThread_subMode(rSELF)
-    andi     a1, kSubModeJitTraceBuild
-    beqz     a1, 1f
-    JAL(save_callsiteinfo)
-#endif
-/* prepare to copy args to "outs" area of current frame */
-1:
-    add      rPC, rPC, 4          # adjust pc to make return consistent
-    FETCH(a2, 1)
-    SAVEAREA_FROM_FP(rBIX, rFP)   # rBIX <- stack save area
-    beqz     a2, .LinvokeArgsDone  # if no args, skip the rest
-    FETCH(a1, 2)                  # a1 <- CCCC
-    b         .LinvokeRangeArgs   # handle args like invoke range
-
-
-/*
  * Common code for method invocation with range.
  *
  * On entry:
@@ -11888,7 +11853,6 @@ common_exceptionThrown:
     lw       a1, offThread_method(rSELF)
     move     a0, rSELF
     lw       a1, offMethod_insns(a1)
-    lhu      ra, offThread_subMode(rSELF)
     move     a2, rOBJ
     subu     a1, rPC, a1
     sra      a1, a1, 1

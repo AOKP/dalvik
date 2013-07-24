@@ -28,6 +28,9 @@
 #include <linux/fs.h>
 #include <cutils/fs.h>
 #include <unistd.h>
+#ifdef HAVE_ANDROID_OS
+#include <sys/prctl.h>
+#endif
 
 #include "Dalvik.h"
 #include "test/Test.h"
@@ -1629,6 +1632,33 @@ static bool registerSystemNatives(JNIEnv* pEnv)
     return true;
 }
 
+/*
+ * Copied and modified slightly from system/core/toolbox/mount.c
+ */
+static std::string getMountsDevDir(const char *arg)
+{
+    char mount_dev[256];
+    char mount_dir[256];
+    int match;
+
+    FILE *fp = fopen("/proc/self/mounts", "r");
+    if (fp == NULL) {
+        ALOGE("Could not open /proc/self/mounts: %s", strerror(errno));
+        return "";
+    }
+
+    while ((match = fscanf(fp, "%255s %255s %*s %*s %*d %*d\n", mount_dev, mount_dir)) != EOF) {
+        mount_dev[255] = 0;
+        mount_dir[255] = 0;
+        if (match == 2 && (strcmp(arg, mount_dir) == 0)) {
+            fclose(fp);
+            return mount_dev;
+        }
+    }
+
+    fclose(fp);
+    return "";
+}
 
 /*
  * Do zygote-mode-only initialization.
@@ -1663,6 +1693,40 @@ static bool initZygote()
             return -1;
         }
     }
+
+    // Mark /system as NOSUID | NODEV
+    const char* android_root = getenv("ANDROID_ROOT");
+
+    if (android_root == NULL) {
+        SLOGE("environment variable ANDROID_ROOT does not exist?!?!");
+        return -1;
+    }
+
+    std::string mountDev(getMountsDevDir(android_root));
+    if (mountDev.empty()) {
+        SLOGE("Unable to find mount point for %s", android_root);
+        return -1;
+    }
+
+    if (mount(mountDev.c_str(), android_root, "none",
+            MS_REMOUNT | MS_NOSUID | MS_NODEV | MS_RDONLY | MS_BIND, NULL) == -1) {
+        SLOGE("Remount of %s failed: %s", android_root, strerror(errno));
+        return -1;
+    }
+
+#ifdef HAVE_ANDROID_OS
+    if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) < 0) {
+        if (errno == EINVAL) {
+            SLOGW("PR_SET_NO_NEW_PRIVS failed. "
+                  "Is your kernel compiled correctly?: %s", strerror(errno));
+            // Don't return -1 here, since it's expected that not all
+            // kernels will support this option.
+        } else {
+            SLOGW("PR_SET_NO_NEW_PRIVS failed: %s", strerror(errno));
+            return -1;
+        }
+    }
+#endif
 
     return true;
 }

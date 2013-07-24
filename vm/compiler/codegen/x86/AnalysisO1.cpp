@@ -864,7 +864,15 @@ int codeGenBasicBlock(const Method* method, BasicBlock_O1* bb) {
             }
 
             if (retCode == 1) {
-                ALOGE("JIT couldn't compile %s%s dex_pc=%d", method->clazz->descriptor, method->name, offsetPC);
+                // We always fall back to the interpreter for OP_INVOKE_OBJECT_INIT_RANGE,
+                // but any other failure is unexpected and should be logged.
+                if (mir->dalvikInsn.opcode != OP_INVOKE_OBJECT_INIT_RANGE) {
+                    ALOGE("JIT couldn't compile %s%s dex_pc=%d opcode=%d",
+                          method->clazz->descriptor,
+                          method->name,
+                          offsetPC,
+                          mir->dalvikInsn.opcode);
+                }
                 return -1;
             }
             updateConstInfo(bb);
@@ -3709,7 +3717,7 @@ int beforeCall(const char* target) { //spill all live registers
        (!strcmp(target, "dvmAllocArrayByClass")) ||
        (!strcmp(target, "dvmAllocPrimitiveArray")) ||
        (!strcmp(target, "dvmInterpHandleFillArrayData")) ||
-       (!strcmp(target, "dvmFindInterfaceMethodInCache2")) ||
+       (!strcmp(target, "dvmFindInterfaceMethodInCache")) ||
        (!strcmp(target, "dvmNcgHandlePackedSwitch")) ||
        (!strcmp(target, "dvmNcgHandleSparseSwitch")) ||
        (!strcmp(target, "dvmCanPutArrayElement")) ||
