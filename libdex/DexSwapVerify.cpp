@@ -912,9 +912,8 @@ static void* swapClassDefItem(const CheckState* state, void* ptr) {
     SWAP_OFFSET4(item->classDataOff);
 
     if ((item->accessFlags & ~ACC_CLASS_MASK) != 0) {
-        // The VM specification says that unknown flags should be ignored.
-        ALOGV("Bogus class access flags %x", item->accessFlags);
-        item->accessFlags &= ACC_CLASS_MASK;
+        ALOGE("Bogus class access flags %x", item->accessFlags);
+        return NULL;
     }
 
     return item + 1;
